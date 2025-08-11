@@ -1,0 +1,27 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.1
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Deploy to server
+        run: |
+          ssh -o StrictHostKeyChecking=no blur@167.71.46.187 << 'EOF'
+            cd /myapp
+            git pull origin main
+            pm2 reload app
+          EOF
