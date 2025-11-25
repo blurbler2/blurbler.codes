@@ -1,0 +1,17 @@
+<html>
+    <body>
+        <h1>Welcome to My Website</h1>
+        <p>This is a sample HTML file.</p>      
+
+    </body>
+    <script>
+        let ws;
+        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${proto}//${window.location.host}`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onmessage = (event) => {
+            console.log('Message from server ', event.data);
+        };
+    </script>
+</html>
