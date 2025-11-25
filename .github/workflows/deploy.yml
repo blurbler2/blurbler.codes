@@ -23,5 +23,6 @@ jobs:
           ssh -o StrictHostKeyChecking=no blurbler@164.92.180.50 << 'EOF'
             cd /var/www/app
             git pull origin main
+            npm install
             pm2 reload app
           EOF
