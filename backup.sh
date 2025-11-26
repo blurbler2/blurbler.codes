@@ -43,7 +43,13 @@ sudo tar -czvf "$BACKUP_FILE" -C "$TEMP_DIR" .
 echo "==> Cleaning up temp files..."
 rm -rf "$TEMP_DIR"
 
+# Keep only the last 2 backups (newest + previous)
+echo "==> Cleaning old backups (keeping only the last 2)..."
+ls -1t "$USER_HOME"/backup-*.tar.gz 2>/dev/null | tail -n +3 | xargs -r rm -- || true
+
+
 echo "==> Backup complete!"
 echo "==> Backup saved to: $BACKUP_FILE"
 echo "Download with:"
 echo "scp USER@YOUR_SERVER_IP:$BACKUP_FILE ."
+
