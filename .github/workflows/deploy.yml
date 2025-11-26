@@ -22,8 +22,14 @@ jobs:
       - name: Deploy to server
         run: |
           ssh -o StrictHostKeyChecking=no blurbler@164.92.180.50 << 'EOF'
+            set -e
             cd /var/www/app
-            git pull origin main
-            npm install
-            pm2 reload app
+            echo "Fetching latest from origin..."
+            git fetch --all --prune
+            echo "Resetting working tree to origin/main..."
+            git reset --hard origin/main
+            echo "Installing dependencies (npm ci)..."
+            npm ci
+            echo "Reloading pm2 app (or starting if missing)..."
+            pm2 reload app || pm2 start app.js --name app
           EOF
