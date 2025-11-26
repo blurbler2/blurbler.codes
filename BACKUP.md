@@ -53,13 +53,17 @@ See `backup.sh` in this repository. If not on already your server, upload the sc
 
     `ssh USER@YOUR_SERVER_IP`
 
+    and navigate to your file:
+
+    `cd /var/www/app`
+
 2. Make it executable:
 
     `chmod +x backup.sh`
 
 3. Run it:
 
-    `sudo ./backup.sh`
+    `./backup.sh`
 
 After it runs successfully, you will see a file like: `backup-20250128-104200.tar.gz` inside your server home directory.
 
@@ -116,3 +120,6 @@ Add:
     `0 3 * * * /home/USER/backup.sh >/var/log/server-backup.log 2>&1`
 
 This creates a backup every night at 3:00 AM.
+
+Run to make executable:
+    `chmod +x /var/www/app/backup.sh`

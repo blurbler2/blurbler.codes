@@ -2,10 +2,11 @@
 set -e
 # Exit immediately if any command fails.
 
+USER_HOME="/home/blurbler"
 BACKUP_DATE=$(date +"%Y%m%d-%H%M%S")
-BACKUP_FILE="$HOME/backup-$BACKUP_DATE.tar.gz"
+BACKUP_FILE="$USER_HOME/backup-$BACKUP_DATE.tar.gz"
 
-TEMP_DIR="$HOME/backup-temp"
+TEMP_DIR="$USER_HOME/backup-temp"
 rm -rf "$TEMP_DIR"
 mkdir -p "$TEMP_DIR"
 
@@ -22,7 +23,7 @@ fi
 
 # PM2 process list dump (no sudo needed)
 mkdir -p "$TEMP_DIR/pm2"
-pm2 save
+pm2 save || true
 cp ~/.pm2/dump.pm2 "$TEMP_DIR/pm2/" 2>/dev/null || true
 
 # Copy nginx config (requires sudo)
@@ -33,7 +34,7 @@ sudo cp -r /etc/nginx/sites-enabled "$TEMP_DIR/nginx/"
 
 # Copy SSL certificates (requires sudo)
 mkdir -p "$TEMP_DIR/letsencrypt"
-sudo cp -r /etc/letsencrypt/* "$TEMP_DIR/letsencrypt/"
+sudo cp -r /etc/letsencrypt/* "$TEMP_DIR/letsencrypt/" || true
 
 echo "==> Creating compressed archive..."
 # tar needs sudo because some copied files are root-owned
@@ -45,4 +46,4 @@ rm -rf "$TEMP_DIR"
 echo "==> Backup complete!"
 echo "==> Backup saved to: $BACKUP_FILE"
 echo "Download with:"
-echo "scp blurbler@YOUR_SERVER_IP:$BACKUP_FILE ."
+echo "scp USER@YOUR_SERVER_IP:$BACKUP_FILE ."
