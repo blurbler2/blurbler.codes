@@ -1,1 +1,7 @@
 node_modules/
+dist/
+.env
+coverage/
+*.log
+.DS_Store
+app.js.baknode_modules/

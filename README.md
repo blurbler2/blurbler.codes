@@ -81,3 +81,8 @@ PORT=3000 node index-ws.js
 pm2 start index-ws.js --name blurbler-ws --watch
 pm2 logs blurbler-ws
 ```
+
+
+## Run website locally
+
+`npm run dev`
