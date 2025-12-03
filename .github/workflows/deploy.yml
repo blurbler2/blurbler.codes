@@ -23,6 +23,20 @@ jobs:
           npm ci
           npm run build
 
+      - name: Ensure remote path exists
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} <<'EOF'
+            set -e
+            mkdir -p ${{ secrets.SERVER_PATH }}/dist
+            exit
+          EOF
+
       - name: Copy dist and PM2 config to server
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
