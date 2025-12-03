@@ -51,6 +51,49 @@ Learning project for fullstack development
 
 Detailed, step-by-step deployment instructions are in `DEPLOY.md`. See that file for SSH key setup, Nginx configuration, Certbot (HTTPS), `pm2` usage, Docker build/run, and an ordered deployment checklist with copyable commands.
 
+### CI / Deploy notes
+
+This repository includes a GitHub Actions workflow which now builds the site on Actions (not on the small VPS) and uploads only the production `dist/` output to the server. This avoids OOM failures when building on small droplets.
+
+Required repository secrets (set these in GitHub → Settings → Secrets and variables → Actions):
+
+- `DEPLOY_SSH_KEY` — private SSH key for the deploy user (contents of the private key file). The workflow will write this to `~/.ssh/id_ed25519` during the run.
+- `SERVER_USER` — user on your server (e.g. `blurbler`).
+- `SERVER_HOST` — server IP or hostname (e.g. `164.92.180.50`).
+- `SERVER_PATH` — absolute path on the server where the app lives (e.g. `/var/www/app`).
+
+After adding the secrets, trigger the workflow by pushing to `main` or using the Actions tab's manual `workflow_dispatch`.
+
+### Local deploy script
+
+You can also build and deploy from your machine using the included `deploy.sh`. It builds locally, uploads `dist/` and `ecosystem.config.js`, and restarts the app with PM2.
+
+Usage examples:
+
+Run with defaults (user `blurbler`, host `164.92.180.50`, path `/var/www/app`, key `~/.ssh/id_ed25519`):
+
+```bash
+./deploy.sh
+```
+
+Pass server arguments:
+
+```bash
+./deploy.sh myuser 1.2.3.4 /var/www/app ~/.ssh/id_ed25519_other
+```
+
+Or export environment variables:
+
+```bash
+export SERVER_USER=myuser
+export SERVER_HOST=1.2.3.4
+export SERVER_PATH=/var/www/app
+export SSH_KEY_PATH=~/.ssh/id_ed25519
+./deploy.sh
+```
+
+Note: The deploy script requires `rsync` and SSH access to the target server and will restart PM2 using `ecosystem.config.js`.
+
 ## Run Locally
 
 To run the app locally for development or quick testing:

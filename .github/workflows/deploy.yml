@@ -1,35 +1,51 @@
-name: Deploy to Server
+name: CI Build and Deploy
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:   # allows manual trigger from GitHub UI
+    branches: [ main ]
+  workflow_dispatch: {}
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+          node-version: '20'
 
-      - name: Deploy to server
+      - name: Install & build
         run: |
-          ssh -o StrictHostKeyChecking=no blurbler@164.92.180.50 << 'EOF'
+          npm ci
+          npm run build
+
+      - name: Copy dist and PM2 config to server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          rsync -avz --delete -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./dist/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/dist/
+          rsync -avz -e "ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no" ./ecosystem.config.js ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_PATH }}/ecosystem.config.js
+
+      - name: Restart app on server
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} <<'EOF'
             set -e
-            cd /var/www/app
-            echo "Fetching latest from origin..."
-            git fetch --all --prune
-            echo "Resetting working tree to origin/main..."
-            git reset --hard origin/main
-            echo "Installing dependencies (npm ci)..."
-            npm ci
-            echo "Reloading pm2 app (or starting if missing)..."
-            pm2 reload app || pm2 start app.js --name app
+            cd ${{ secrets.SERVER_PATH }}
+            pm2 start ecosystem.config.js --env production --update-env || pm2 reload ecosystem.config.js --env production --update-env
+            pm2 save
+            exit
           EOF
