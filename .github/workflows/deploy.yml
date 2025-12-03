@@ -23,6 +23,21 @@ jobs:
           npm ci
           npm run build
 
+      - name: Validate deploy secrets
+        env:
+          SERVER_PATH: ${{ secrets.SERVER_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$SERVER_PATH" ]; then
+            echo "ERROR: SERVER_PATH secret is empty. Set 'SERVER_PATH' in repository secrets to e.g. /var/www/app"
+            exit 1
+          fi
+          if [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "ERROR: DEPLOY_SSH_KEY secret is empty. Add your private key to 'DEPLOY_SSH_KEY' secret."
+            exit 1
+          fi
+          echo "Deploy secrets present (masked)."
+
       - name: Ensure remote path exists
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -33,7 +48,10 @@ jobs:
 
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} <<'EOF'
             set -e
-            mkdir -p ${{ secrets.SERVER_PATH }}/dist
+            echo "Remote user: $(whoami)"
+            echo "Attempting to create path: '${{ secrets.SERVER_PATH }}/dist'"
+            mkdir -p "${{ secrets.SERVER_PATH }}/dist"
+            echo "Created or verified directory: '${{ secrets.SERVER_PATH }}/dist'"
             exit
           EOF
 
