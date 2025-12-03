@@ -53,9 +53,21 @@ jobs:
       - name: Restart app on server
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} <<'EOF'
-            set -e
+            set -euo pipefail
             cd ${{ secrets.SERVER_PATH }}
-            pm2 start ecosystem.config.js --env production --update-env || pm2 reload ecosystem.config.js --env production --update-env
-            pm2 save
-            exit
+            if pm2 start ecosystem.config.js --env production --update-env; then
+              echo "pm2 start succeeded"
+            elif pm2 reload ecosystem.config.js --env production --update-env; then
+              echo "pm2 reload succeeded"
+            else
+              echo "ERROR: pm2 start and reload both failed" >&2
+              echo "---- pm2 status ----"
+              pm2 status || true
+              echo "---- pm2 logs (tail 200) ----"
+              pm2 logs --lines 200 || true
+              exit 1
+            fi
+            pm2 save || true
+            echo "pm2 saved; current status:"
+            pm2 status || true
           EOF
